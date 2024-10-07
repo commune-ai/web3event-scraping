@@ -2,7 +2,19 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
-First, run the development server:
+You need to install node_modules.
+
+```bash
+npm install
+
+yarn install
+
+pnpm install
+
+bun install
+```
+
+And then, you can run the server:
 
 ```bash
 npm run dev
@@ -14,11 +26,31 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+You can manage the port.
+
+You can scraping the data with this api.
+
+[--- api/data/route ---]
+
+You can update the data with this api.
+
+[--- api/data/update/route ---]
+
+
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+
+<video controls src="intro-1.mp4" title="Title"></video>
+
+
+## ***     You can find all events.    ***
+
+You can search for events by name or location.
+
+You can see about details of event.
 
 ## Learn More
 
