@@ -128,8 +128,9 @@ async def main():
         scraper = LumaScraper(min_sleep=1, max_sleep=5)
         results = await scraper.scrape()
         
-        # Set the full path for the output file in the current directory
-        output_file = os.path.join(os.getcwd(), "luma_events.json")
+        # Set the full path for the output file in the script folder
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_file = os.path.join(script_dir, "luma_events.json")
         
         # Open the file with write permissions and handle potential errors
         try:
