@@ -1,10 +1,12 @@
+
 'use client'
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Card, CardContent, Typography, Grid, Box, CardActionArea, Modal, CircularProgress, Button, AppBar, Toolbar } from '@mui/material';
+import { Card, CardContent, Typography, Grid, Box, CardActionArea, Modal, CircularProgress, Button, AppBar, Toolbar, TextField } from '@mui/material';
 import Container from '@mui/material/Container';
 import Markdown from 'react-markdown';
+import DetailModal from '@/app/components/DetailModal';
 
 export default function CityPage() {
     const params = useParams();
@@ -13,21 +15,34 @@ export default function CityPage() {
     const [cityData, setCityData] = useState<any[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filteredCityData, setFilteredCityData] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchCityData = async () => {
+            setIsLoading(true);
             try {
                 const response = await fetch(`/api/city/${encodeURIComponent(name)}`);
                 const data = await response.json();
                 setCityData(data);
+                setFilteredCityData(data);
             } catch (error) {
                 console.error('Error fetching city data:', error);
+            } finally {
+                setIsLoading(false);
             }
         };
 
         fetchCityData();
     }, [name]);
+
+    useEffect(() => {
+        const filtered = cityData.filter(event => 
+            event.event?.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredCityData(filtered);
+    }, [searchTerm, cityData]);
 
     const formatDateRange = (start: string, end: string) => {
         const startDate = new Date(start);
@@ -66,6 +81,14 @@ export default function CityPage() {
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         Events in {name}
                     </Typography>
+                    <TextField
+                        variant="outlined"
+                        size="small"
+                        placeholder="Search events..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        sx={{ mr: 2, backgroundColor: 'white' }}
+                    />
                     <Button color="inherit" onClick={() => router.back()}>
                         Back
                     </Button>
@@ -73,9 +96,13 @@ export default function CityPage() {
             </AppBar>
             <Toolbar /> {/* This empty Toolbar acts as a spacer */}
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1, overflow: 'auto' }}>
-                {cityData.length > 0 ? (
+                {isLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                        <CircularProgress />
+                    </Box>
+                ) : filteredCityData.length > 0 ? (
                     <Grid container spacing={4}>
-                        {cityData.map((event, index) => (
+                        {filteredCityData.map((event, index) => (
                             <Grid item xs={12} sm={6} md={4} key={index}>
                                 <Card
                                     sx={{
@@ -137,107 +164,15 @@ export default function CityPage() {
                         ))}
                     </Grid>
                 ) : (
-                    <Typography>Loading city data...</Typography>
+                    <Typography>No events found.</Typography>
                 )}
             </Container>
-            <Modal
-                open={isModalOpen}
-                onClose={() => handleCloseModal()}
-                aria-labelledby="event-modal-title"
-                aria-describedby="event-modal-description"
-            >
-                <Box sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: '70%',
-                    maxHeight: '90vh',
-                    bgcolor: '#3a3a3a',
-                    color: 'white',
-                    border: '2px solid #000',
-                    boxShadow: 24,
-                    p: 4,
-                    overflowY: 'auto',
-                }}>
-                    {isLoading ? (
-                        <CircularProgress />
-                    ) : selectedEvent ? (
-                        <>
-                            <Typography id="event-modal-title" variant="h4" component="h2" gutterBottom>
-                                {selectedEvent.event?.name || 'Event Details'}
-                            </Typography>
-                            <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
-                                    {selectedEvent.event?.cover_url && (
-                                        <img src={selectedEvent.event.cover_url} alt="Event Cover" style={{ width: '100%', height: 'auto', objectFit: 'cover' }} />
-                                    )}
-                                </Grid>
-                                <Grid item xs={12} md={6}>
-                                    <Typography variant="h6" gutterBottom>Event Details</Typography>
-                                    <Typography><strong>Date:</strong> {selectedEvent.event?.start_at && selectedEvent.event?.end_at ? formatDateRange(selectedEvent.event.start_at, selectedEvent.event.end_at) : 'Not specified'}</Typography>
-                                    <Typography><strong>Price:</strong> {selectedEvent.event?.price || 'Not specified'}</Typography>
-                                    <Typography><strong>Timezone:</strong> {selectedEvent.event?.timezone || 'Not specified'}</Typography>
-                                    <Typography><strong>Sold Out:</strong> {selectedEvent.sold_out !== undefined ? (selectedEvent.sold_out ? 'Yes' : 'No') : 'Unknown'}</Typography>
-                                    <Typography><strong>Featured Info Count:</strong> {selectedEvent.featured_info_count !== undefined ? selectedEvent.featured_info_count.toString() : 'N/A'}</Typography>
-                                    {selectedEvent.calendar?.website && (
-                                        <Typography><strong>Website:</strong> <a href={selectedEvent.calendar.website} target="_blank" rel="noopener noreferrer" style={{ color: '#90caf9' }}>{selectedEvent.calendar.website}</a></Typography>
-                                    )}
-                                    {selectedEvent.api_url && (
-                                        <Typography><strong>API URL:</strong> <a href={selectedEvent.api_url} target="_blank" rel="noopener noreferrer" style={{ color: '#90caf9' }}>{selectedEvent.api_url}</a></Typography>
-                                    )}
-                                    {selectedEvent.calendar?.country && (
-                                        <Button 
-                                            variant="contained" 
-                                            color="primary" 
-                                            onClick={() => handleGoToCountry(selectedEvent.calendar.country)}
-                                            sx={{ mt: 2 }}
-                                        >
-                                            Go to {selectedEvent.calendar.country} Page
-                                        </Button>
-                                    )}
-                                </Grid>
-                            </Grid>
-                            <Box sx={{ mt: 3 }}>
-                                <Typography variant="h6" gutterBottom>Event Description</Typography>
-
-                                {selectedEvent.description_mirror && selectedEvent.description_mirror.content && selectedEvent.description_mirror.content.length > 0 ? (
-                                    selectedEvent.description_mirror.content.map((block: { type: string; content: { text: string }[] }, index: number) => {
-                                        switch (block.type) {
-                                            case 'paragraph':
-                                                return (
-                                                    <Typography key={index} paragraph>
-                                                        {block.content && block.content.map((item: { text: string }, idx: number) => item.text).join('')}
-                                                    </Typography>
-                                                );
-                                            case 'heading':
-                                                return (
-                                                    <Typography key={index} variant="h6" gutterBottom>
-                                                        {block.content && block.content.map((item: { text: string }, idx: number) => item.text).join('')}
-                                                    </Typography>
-                                                );
-                                            case 'list':
-                                                return (
-                                                    <ul key={index}>
-                                                        {block.content && block.content.map((item: { text: string }, idx: number) => (
-                                                            <li key={idx}>{item.text}</li>
-                                                        ))}
-                                                    </ul>
-                                                );
-                                            default:
-                                                return null;
-                                        }
-                                    })
-                                ) : (
-                                    <Typography>No description available.</Typography>
-                                )}
-                            </Box>
-                        </>
-                    ) : (
-                        <Typography>No event data available</Typography>
-                    )}
-                </Box>
-            </Modal>
+            <DetailModal
+                isModalOpen={isModalOpen}
+                handleCloseModal={handleCloseModal}
+                isLoading={isLoading}
+                selectedEvent={selectedEvent}
+            />
         </Box>
     );
 }
